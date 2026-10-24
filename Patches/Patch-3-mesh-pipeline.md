@@ -65,3 +65,26 @@
 - Кузов — SkeletalMesh (`SK_KAMAZ_Pickup*`): подмена класса не прокатывает, нужен либо cook
   SkeletalMesh на костях донорского скелета, либо `MeshSetup.Mesh` (GUI/MCP студии).
 - Скрипт импорта: `tools/ue_import_kamaz.py` (копия `D:\SteamLibrary\KAMAZ_UE\import_kamaz.py`).
+
+## UE-фаза detail_v2 (выполнено — пак R2)
+
+- FBX: `kamaz_scum_detailed.py <out> fbx` → 14 FBX с именами целевых ассетов (колесо ×4;
+  бамперы исключены — там SK). Копия в `D:\SteamLibrary\KAMAZ_UE\Import\detail_v2\`.
+- Импорт: `E:\Games\UE_4.27\Engine\Binaries\Win64\UE4Editor-Cmd.exe` (не корень 4.27),
+  `-run=pythonscript -script=import_detail_v2.py -nullrhi -unattended -nosplash -nosound`,
+  env `UE-LocalDataCachePath=D:\SteamLibrary\KAMAZ_UE\DDC`. 15 ассетов в
+  `Content\ConZ_Files\Models\Vehicles2\Pickup\Meshes\`. В 4.27 Python нет
+  `unreal.EditorAssetLibrary` — верификация через try/`load_asset`.
+- Cook: `-run=cook -targetplatform=WindowsNoEditor -unversioned -iterate -nullrhi` →
+  `Saved\Cooked\WindowsNoEditor\KAMAZ_UE\Content\...` 15 пар .uasset/.uexp.
+- Подмена: 30 cooked-файлов поверх клонов в staging (те же имена; бамперы и Armor*/Door*
+  не трогать), `.sig` рядом не класть.
+- Сборка R2: AR-мердж (`tools/asset_registry_merge.py`) → `pak pack <staging> -o
+  0_KAMAZ_Client_B25804202_R2_900_P.pak` (без `--sig`): 555 записей, 171 975 804 байт, exit 0.
+- Верификация `render mesh` по самому паку: RoofRack и Seat_Left = v2 (корзина с
+  X-раскосами; подголовник/подлокотники), Wheel_FrontLeft = v5 (протектор), Light_Top = v1
+  (бар с лапами) — геометрия наша, цвет серый (WorldGridMaterial, ожидаемо).
+- Деплой: R1 (63 МБ) убран в `Temp\rufp\kamaz\backup\`; в `~mods` один KAMAZ-пак
+  `0_KAMAZ_Client_B25804202_R2_900_P.pak`.
+- Осталось: проверка в игре `#SpawnVehicle BPC_KAMAZ_Pickup`; материалы (`MI_KAMAZ_Pickup_*`),
+  чистка FBX от LOD1/2+UCX, бамперы (фаза B: cook на скелете донора или MeshSetup).

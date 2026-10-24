@@ -839,6 +839,38 @@ def build_body(out):
     for p in parts:
         p.hide_render = False
 
+FBX_TARGETS = [
+    ("SM_KAMAZ_Pickup_Wheel", "SM_KAMAZ_Pickup_Wheel_FrontLeft"),
+    ("SM_KAMAZ_Pickup_Light_Top_Bar", "SM_KAMAZ_Pickup_Light_Top"),
+    ("SM_KAMAZ_Pickup_Lights_FrontLeft", "SM_KAMAZ_Pickup_Lights_FrontLeft"),
+    ("SM_KAMAZ_Pickup_Lights_FrontRight", "SM_KAMAZ_Pickup_Lights_FrontRight"),
+    ("SM_KAMAZ_Pickup_Light_BackLeft", "SM_KAMAZ_Pickup_Light_BackLeft"),
+    ("SM_KAMAZ_Pickup_Light_BackRight", "SM_KAMAZ_Pickup_Light_BackRight"),
+    ("SM_KAMAZ_Pickup_RoofRack", "SM_KAMAZ_Pickup_RoofRack"),
+    ("SM_KAMAZ_Pickup_Seat_Left", "SM_KAMAZ_Pickup_Seat_Left"),
+    ("SM_KAMAZ_Pickup_Seat_Right", "SM_KAMAZ_Pickup_Seat_Right"),
+    ("SM_KAMAZ_Pickup_Seat_Back", "SM_KAMAZ_Pickup_Seat_Back"),
+    ("SM_KAMAZ_Pickup_Alternator", "SM_KAMAZ_Pickup_Alternator"),
+    ("SM_KAMAZ_Pickup_Battery", "SM_KAMAZ_Pickup_Battery"),
+    ("SK_KAMAZ_Pickup_Bumper_Front", "SK_KAMAZ_Pickup_Bumper_Front"),
+    ("SK_KAMAZ_Pickup_Bumper_Back", "SK_KAMAZ_Pickup_Bumper_Back"),
+]
+
+def build_fbx(out):
+    fdir = os.path.join(out, "fbx")
+    os.makedirs(fdir, exist_ok=True)
+    for src, dst in FBX_TARGETS:
+        o = bpy.data.objects.get(src)
+        if o is None:
+            print(f"fbx MISS {src}")
+            continue
+        o.name = dst
+        bpy.ops.object.select_all(action='DESELECT')
+        o.select_set(True)
+        bpy.context.view_layer.objects.active = o
+        bpy.ops.export_scene.fbx(filepath=os.path.join(fdir, dst + ".fbx"), use_selection=True)
+        print(f"fbx {dst}")
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     out = argv[0] if argv else r"C:\Users\leman\AppData\Local\Temp\rufp\kamaz\model"
@@ -855,6 +887,12 @@ def main():
         build_parts(out)
     if stage in ("body", "all"):
         build_body(out)
+    if stage == "fbx":
+        build_wheel(out)
+        build_lights(out)
+        build_parts(out)
+        build_body(out)
+        build_fbx(out)
     print("DONE")
 
 main()

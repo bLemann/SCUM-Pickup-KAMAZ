@@ -1,12 +1,25 @@
 import unreal
 
-TASK = unreal.AssetImportTask()
-TASK.filename = 'D:/SteamLibrary/KAMAZ_UE/Import/KAMAZ_Pickup_Blockout.fbx'
-TASK.destination_path = '/Game/ConZ_Files/Models/Vehicles2/Pickup/Meshes'
-TASK.destination_name = 'SM_KAMAZ_Pickup_Wheel_FrontLeft'
-TASK.automated = True
-TASK.save = True
-TASK.replace_existing = True
+FBX_DIR = 'D:/SteamLibrary/KAMAZ_UE/Import/detail_v2'
+DEST = '/Game/ConZ_Files/Models/Vehicles2/Pickup/Meshes'
+
+JOBS = [
+    ('SM_KAMAZ_Pickup_Wheel_FrontLeft.fbx', 'SM_KAMAZ_Pickup_Wheel_FrontLeft'),
+    ('SM_KAMAZ_Pickup_Wheel_FrontLeft.fbx', 'SM_KAMAZ_Pickup_Wheel_FrontRight'),
+    ('SM_KAMAZ_Pickup_Wheel_FrontLeft.fbx', 'SM_KAMAZ_Pickup_Wheel_BackLeft'),
+    ('SM_KAMAZ_Pickup_Wheel_FrontLeft.fbx', 'SM_KAMAZ_Pickup_Wheel_BackRight'),
+    ('SM_KAMAZ_Pickup_Light_Top.fbx', 'SM_KAMAZ_Pickup_Light_Top'),
+    ('SM_KAMAZ_Pickup_Lights_FrontLeft.fbx', 'SM_KAMAZ_Pickup_Lights_FrontLeft'),
+    ('SM_KAMAZ_Pickup_Lights_FrontRight.fbx', 'SM_KAMAZ_Pickup_Lights_FrontRight'),
+    ('SM_KAMAZ_Pickup_Light_BackLeft.fbx', 'SM_KAMAZ_Pickup_Light_BackLeft'),
+    ('SM_KAMAZ_Pickup_Light_BackRight.fbx', 'SM_KAMAZ_Pickup_Light_BackRight'),
+    ('SM_KAMAZ_Pickup_RoofRack.fbx', 'SM_KAMAZ_Pickup_RoofRack'),
+    ('SM_KAMAZ_Pickup_Seat_Left.fbx', 'SM_KAMAZ_Pickup_Seat_Left'),
+    ('SM_KAMAZ_Pickup_Seat_Right.fbx', 'SM_KAMAZ_Pickup_Seat_Right'),
+    ('SM_KAMAZ_Pickup_Seat_Back.fbx', 'SM_KAMAZ_Pickup_Seat_Back'),
+    ('SM_KAMAZ_Pickup_Alternator.fbx', 'SM_KAMAZ_Pickup_Alternator'),
+    ('SM_KAMAZ_Pickup_Battery.fbx', 'SM_KAMAZ_Pickup_Battery'),
+]
 
 opts = unreal.FbxImportUI()
 opts.import_mesh = True
@@ -19,18 +32,30 @@ sm.combine_meshes = True
 sm.auto_generate_collision = False
 sm.import_translation = unreal.Vector(0.0, 0.0, 0.0)
 opts.static_mesh_import_data = sm
-TASK.options = opts
 
-unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([TASK])
+tasks = []
+for fname, dname in JOBS:
+    t = unreal.AssetImportTask()
+    t.filename = FBX_DIR + '/' + fname
+    t.destination_path = DEST
+    t.destination_name = dname
+    t.automated = True
+    t.save = True
+    t.replace_existing = True
+    t.options = opts
+    tasks.append(t)
 
-path = '/Game/ConZ_Files/Models/Vehicles2/Pickup/Meshes/SM_KAMAZ_Pickup_Wheel_FrontLeft'
-if unreal.EditorAssetLibrary.does_asset_exist(path):
-    m = unreal.load_asset(path)
-    bb = m.get_bounding_box()
-    ext = bb.get_extent()
-    sz = bb.get_size()
-    mats = m.static_materials
-    slot0 = mats[0].material_slot_name if len(mats) else 'none'
-    unreal.log('KAMAZ_IMPORT_OK size=(%.1f, %.1f, %.1f)cm slots=%d slot0=%s' % (sz.x, sz.y, sz.z, len(mats), slot0))
-else:
-    unreal.log('KAMAZ_IMPORT_FAIL')
+unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks(tasks)
+
+fails = 0
+for _, dname in JOBS:
+    p = DEST + '/' + dname
+    try:
+        m = unreal.load_asset(p)
+        sz = m.get_bounding_box().get_size()
+        n = len(m.static_materials)
+        unreal.log('KAMAZ_IMPORT_OK %s size=(%.1f,%.1f,%.1f) slots=%d' % (dname, sz.x, sz.y, sz.z, n))
+    except Exception:
+        fails += 1
+        unreal.log('KAMAZ_IMPORT_FAIL %s' % dname)
+unreal.log('KAMAZ_IMPORT_DONE fails=%d' % fails)
