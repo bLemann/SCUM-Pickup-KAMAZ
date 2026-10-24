@@ -1,0 +1,12 @@
+# Сборка
+Build/
+*.pak
+*.sig
+
+# Studio рабочий кэш
+*.ssproj.bak
+*.uasset.tmp
+
+# Системное
+Thumbs.db
+desktop.ini
