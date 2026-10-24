@@ -237,6 +237,22 @@ def cyl_x(bm, r, x0, x1, cy=0.0, cz=0.0, seg=20, mi=0):
     for f in faces:
         f.material_index = mi
 
+def cyl_z(bm, r, z0, z1, cx=0.0, cy=0.0, seg=12, mi=0):
+    a = [bm.verts.new((cx + r * math.cos(i / seg * math.tau), cy + r * math.sin(i / seg * math.tau), z0)) for i in range(seg)]
+    b = [bm.verts.new((cx + r * math.cos(i / seg * math.tau), cy + r * math.sin(i / seg * math.tau), z1)) for i in range(seg)]
+    faces = []
+    for i in range(seg):
+        j = (i + 1) % seg
+        faces.append(bm.faces.new((a[i], a[j], b[j], b[i])))
+    c0 = bm.verts.new((cx, cy, z0))
+    c1 = bm.verts.new((cx, cy, z1))
+    for i in range(seg):
+        j = (i + 1) % seg
+        faces.append(bm.faces.new((c0, a[j], a[i])))
+        faces.append(bm.faces.new((c1, b[i], b[j])))
+    for f in faces:
+        f.material_index = mi
+
 def gusset(bm, x, y, zb, zt, dx, th, mi=0):
     y2 = y + th
     a = bm.verts.new((x, y, zb)); b = bm.verts.new((x + dx, y, zt)); c = bm.verts.new((x, y, zt))
@@ -350,6 +366,25 @@ def roofrack_bm():
     box(bm, 0.30, 0.85, 0.585, 0.595, 1.09, 1.12, 2)
     box(bm, 0.15, 0.45, -0.595, -0.585, 0.525, 0.565, 2)
     box(bm, 0.15, 0.45, 0.585, 0.595, 0.525, 0.565, 2)
+    for ly in (-LY, LY):
+        box(bm, 0.09, 1.38, ly - 0.012, ly + 0.012, 0.57, 1.08, 0)
+    for i in range(10):
+        xb = 0.17 + i * 0.118
+        box(bm, xb, xb + 0.014, -0.565, 0.565, 0.795, 0.823, 0)
+    for xc in (0.38, 1.04):
+        box(bm, xc, xc + 0.014, -0.014, 0.014, 0.57, 0.795, 0)
+    for xe in (LX0 - 0.012, LX1 - 0.012):
+        for sgn in (1.0, -1.0):
+            ya, za = -LY + 0.04, 0.58
+            yb, zb = LY - 0.04, 1.078
+            if sgn < 0:
+                ya, za, yb, zb = yb, zb, ya, za
+            obbox(bm, [(xe, ya, za), (xe + 0.024, ya, za), (xe + 0.024, yb, zb), (xe, yb, zb),
+                       (xe + 0.024, ya, za - 0.026), (xe + 0.048, ya, za - 0.026),
+                       (xe + 0.048, yb, zb - 0.026), (xe + 0.024, yb, zb - 0.026)], 1)
+    for lx in (LX0, LX1):
+        for ly in (-LY, LY):
+            cyl_z(bm, 0.009, 1.128, 1.138, cx=lx, cy=ly, seg=6, mi=1)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -373,6 +408,13 @@ def seat_bm():
     box(bm, -0.42, -0.395, 0.06, 0.10, 0.71, 0.735, 2)
     box(bm, -0.42, -0.395, -0.10, -0.06, 0.71, 0.735, 2)
     box(bm, -0.463, -0.448, -0.25, 0.25, 0.42, 0.74, 2)
+    obbox(bm, [(-0.275, -0.27, 0.335), (-0.275, 0.27, 0.335), (-0.455, 0.27, 0.395), (-0.455, -0.27, 0.395),
+               (-0.395, -0.27, 0.715), (-0.395, 0.27, 0.715), (-0.47, 0.27, 0.745), (-0.47, -0.27, 0.745)], 2)
+    box(bm, -0.402, -0.388, -0.06, -0.02, 0.715, 0.75, 2)
+    box(bm, -0.402, -0.388, 0.02, 0.06, 0.715, 0.75, 2)
+    box(bm, -0.30, -0.292, -0.25, 0.25, 0.34, 0.348, 1)
+    box(bm, 0.08, 0.088, -0.25, 0.25, 0.34, 0.348, 1)
+    cyl_y(bm, 0.015, -0.23, 0.23, cx=-0.09, cz=0.055, seg=8, mi=2)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -394,6 +436,11 @@ def seat_back_bm():
     box(bm, -0.365, -0.32, 0.18, 0.50, 0.75, 0.764, 1)
     box(bm, -0.365, -0.32, -0.50, -0.18, 0.75, 0.764, 1)
     box(bm, -0.42, -0.405, -0.64, 0.64, 0.44, 0.72, 2)
+    obbox(bm, [(-0.255, -0.66, 0.355), (-0.255, 0.66, 0.355), (-0.415, 0.66, 0.415), (-0.415, -0.66, 0.415),
+               (-0.375, -0.66, 0.695), (-0.375, 0.66, 0.695), (-0.435, 0.66, 0.715), (-0.435, -0.66, 0.715)], 2)
+    box(bm, -0.365, -0.35, 0.30, 0.36, 0.70, 0.725, 2)
+    box(bm, -0.365, -0.35, -0.36, -0.30, 0.70, 0.725, 2)
+    box(bm, -0.252, -0.244, -0.62, 0.62, 0.355, 0.363, 1)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -413,6 +460,12 @@ def alternator_bm():
     box(bm, 0.0, 0.022, -0.09, 0.07, -0.16, 0.06, 1)
     box(bm, 0.0, 0.022, -0.03, 0.03, -0.298, -0.13, 1)
     box(bm, 0.0, 0.02, 0.10, 0.14, -0.10, -0.04, 1)
+    cyl_y(bm, 0.081, -0.045, -0.025, cx=0.083, cz=-0.02, seg=32, mi=0)
+    cyl_y(bm, 0.081, 0.055, 0.075, cx=0.083, cz=-0.02, seg=32, mi=0)
+    cyl_y(bm, 0.047, -0.128, -0.112, cx=0.083, cz=-0.02, seg=24, mi=1)
+    cyl_y(bm, 0.047, -0.073, -0.057, cx=0.083, cz=-0.02, seg=24, mi=1)
+    cyl_y(bm, 0.016, -0.142, -0.130, cx=0.083, cz=-0.02, seg=6, mi=1)
+    cyl_y(bm, 0.026, 0.135, 0.162, cx=0.105, cz=0.01, seg=8, mi=2)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -430,6 +483,12 @@ def battery_bm():
     for x0 in (-0.10, -0.05, 0.0, 0.05):
         box(bm, x0, x0 + 0.03, -0.108, -0.102, 0.03, 0.13, 0)
         box(bm, x0, x0 + 0.03, 0.102, 0.108, 0.03, 0.13, 0)
+    for cx6 in (-0.10, -0.06, -0.02, 0.02, 0.06, 0.10):
+        cyl_z(bm, 0.014, 0.172, 0.191, cx=cx6, cy=0.055, seg=8, mi=0)
+    box(bm, 0.078, 0.122, -0.062, -0.018, 0.196, 0.208, 1)
+    box(bm, -0.122, -0.078, -0.062, -0.018, 0.196, 0.208, 1)
+    cyl_y(bm, 0.012, -0.108, -0.132, cx=0.10, cz=0.15, seg=6, mi=1)
+    cyl_y(bm, 0.012, -0.108, -0.132, cx=-0.10, cz=0.15, seg=6, mi=1)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -461,6 +520,16 @@ def bumper_front_bm():
     box(bm, -0.32, 0.05, -0.55, 0.55, 0.28, 0.33, 0)
     box(bm, -0.10, 0.10, -0.50, -0.40, 0.28, 0.445, 0)
     box(bm, -0.10, 0.10, 0.40, 0.50, 0.28, 0.445, 0)
+    for by, bz in ((0.60, 0.13), (0.60, 0.25), (-0.60, 0.13), (-0.60, 0.25), (0.25, 0.25), (-0.25, 0.25)):
+        cyl_x(bm, 0.011, 0.338, 0.352, cy=by, cz=bz, seg=6, mi=1)
+    box(bm, 0.295, 0.315, -0.16, -0.10, 0.04, 0.07, 4)
+    box(bm, 0.295, 0.315, 0.10, 0.16, 0.04, 0.07, 4)
+    for yc in (-0.32, 0.32):
+        cyl_x(bm, 0.010, 0.255, 0.325, cy=yc, cz=0.0, seg=6, mi=1)
+    for yr in (-0.19, -0.15, 0.15, 0.19):
+        box(bm, 0.295, 0.315, yr - 0.02, yr + 0.02, -0.047, 0.02, 1)
+    box(bm, -0.02, 0.28, -0.987, -0.80, 0.30, 0.315, 2)
+    box(bm, -0.02, 0.28, 0.80, 0.987, 0.30, 0.315, 2)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -484,7 +553,14 @@ def bumper_back_bm():
         cyl_y(bm, 0.011, yc - 0.06, yc + 0.06, cx=-0.19, cz=0.0725, seg=12, mi=1)
     for yc in (-0.56, -0.42, 0.42, 0.56):
         cyl_x(bm, 0.032, -0.23, -0.09, cy=yc, cz=-0.045, seg=20, mi=3)
+        cyl_x(bm, 0.022, -0.226, -0.150, cy=yc, cz=-0.045, seg=16, mi=1)
         box(bm, -0.11, -0.07, yc - 0.02, yc + 0.02, -0.075, -0.015, 1)
+    box(bm, -0.206, -0.196, -0.32, -0.24, 0.0, 0.03, 4)
+    box(bm, -0.206, -0.196, 0.24, 0.32, 0.0, 0.03, 4)
+    for by, bz in ((0.75, 0.0), (0.75, -0.075), (-0.75, 0.0), (-0.75, -0.075), (0.0, -0.075), (0.65, 0.06), (-0.65, 0.06)):
+        cyl_x(bm, 0.009, -0.206, -0.196, cy=by, cz=bz, seg=6, mi=1)
+    box(bm, -0.198, 0.05, -0.62, -0.38, 0.107, 0.125, 0)
+    box(bm, -0.198, 0.05, 0.38, 0.62, 0.107, 0.125, 0)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -501,6 +577,9 @@ def grille_bm():
         ys = -0.364 + i * 0.0375
         box(bm, 0.065, 0.095, ys, ys + 0.016, -0.215, -0.05, 0)
     box(bm, 0.05, 0.10, -0.30, 0.30, -0.005, 0.038, 1)
+    box(bm, 0.056, 0.062, -0.368, 0.368, -0.212, -0.053, 3)
+    for gy, gz in ((-0.387, -0.232), (-0.387, -0.033), (0.387, -0.232), (0.387, -0.033), (0.0, -0.232), (0.0, -0.033)):
+        cyl_x(bm, 0.008, 0.093, 0.103, cy=gy, cz=gz, seg=6, mi=3)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -528,6 +607,18 @@ def platform_bm():
     box(bm, 0.03, 0.17, -0.75, 0.75, 0.30, 0.34, 0)
     for xc in (-1.35, -0.85, -0.35, 0.0):
         box(bm, xc - 0.025, xc + 0.025, -0.70, 0.70, -0.08, -0.02, 0)
+    for xp in (-1.40, -0.90, -0.40):
+        box(bm, xp - 0.03, xp + 0.03, -0.752, -0.692, 0.04, 0.09, 0)
+        box(bm, xp - 0.03, xp + 0.03, 0.692, 0.752, 0.04, 0.09, 0)
+    for xs in (-1.40, -0.40):
+        box(bm, xs - 0.02, xs + 0.02, -0.735, -0.715, 0.09, 0.42, 1)
+        box(bm, xs - 0.02, xs + 0.02, 0.715, 0.735, 0.09, 0.42, 1)
+    for xd in (-1.30, -0.45):
+        for yd in (-0.55, 0.55):
+            cyl_z(bm, 0.034, 0.006, 0.021, cx=xd, cy=yd, seg=12, mi=0)
+            cyl_z(bm, 0.020, 0.006, 0.024, cx=xd, cy=yd, seg=12, mi=1)
+    box(bm, 0.145, 0.155, -0.72, 0.72, 0.10, 0.13, 0)
+    box(bm, 0.145, 0.155, -0.72, 0.72, 0.20, 0.23, 0)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -664,12 +755,12 @@ def build_parts(out):
     for o in parts:
         print(f"[{o.name}] tris={tris(o)}")
 
-    export_one(rack, os.path.join(out, "roofrack_v1.glb"))
-    export_one(seat_l, os.path.join(out, "seat_L_v1.glb"))
-    export_one(seat_r, os.path.join(out, "seat_R_v1.glb"))
-    export_one(seat_b, os.path.join(out, "seat_back_v1.glb"))
-    export_one(alt, os.path.join(out, "alternator_v1.glb"))
-    export_one(bat, os.path.join(out, "battery_v1.glb"))
+    export_one(rack, os.path.join(out, "roofrack_v2.glb"))
+    export_one(seat_l, os.path.join(out, "seat_L_v2.glb"))
+    export_one(seat_r, os.path.join(out, "seat_R_v2.glb"))
+    export_one(seat_b, os.path.join(out, "seat_back_v2.glb"))
+    export_one(alt, os.path.join(out, "alternator_v2.glb"))
+    export_one(bat, os.path.join(out, "battery_v2.glb"))
 
     cam, tgt = setup_render()
 
@@ -681,21 +772,21 @@ def build_parts(out):
     solo(rack, Vector((0.73, 0.0, 0.80)), {
         "quarter": (Vector((0.7, -0.9, 0.5)), 2.0),
         "side": (Vector((0.15, 1.0, 0.2)), 2.0),
-    }, "roofrack_v1")
+    }, "roofrack_v2")
     solo(seat_l, Vector((-0.10, 0.0, 0.40)), {
         "front": (Vector((0.9, -0.5, 0.35)), 1.1),
         "side": (Vector((0.1, -1.0, 0.2)), 1.1),
-    }, "seat_v1")
+    }, "seat_v2")
     solo(seat_b, Vector((-0.06, 0.0, 0.40)), {
         "front": (Vector((1.0, 0.0, 0.15)), 1.9),
         "quarter": (Vector((0.8, -0.5, 0.35)), 1.9),
-    }, "seatback_v1")
+    }, "seatback_v2")
     solo(alt, Vector((0.08, 0.01, -0.09)), {
         "quarter": (Vector((0.8, -0.6, 0.5)), 0.5),
-    }, "alternator_v1")
+    }, "alternator_v2")
     solo(bat, Vector((0.0, 0.0, 0.10)), {
         "quarter": (Vector((0.8, -0.6, 0.5)), 0.45),
-    }, "battery_v1")
+    }, "battery_v2")
     for p in parts:
         p.hide_render = False
 
@@ -708,7 +799,7 @@ def build_body(out):
     m_alu = mat("KAMAZ_AlternAlu", (0.38, 0.39, 0.41), 0.38, metal=0.9)
 
     bfront = obj_from_bm_m(bumper_front_bm(), "SK_KAMAZ_Pickup_Bumper_Front", [m_plast, m_metal, m_bodyred, m_white, m_warm])
-    bback = obj_from_bm_m(bumper_back_bm(), "SK_KAMAZ_Pickup_Bumper_Back", [m_plast, m_metal, m_bodyred, m_alu])
+    bback = obj_from_bm_m(bumper_back_bm(), "SK_KAMAZ_Pickup_Bumper_Back", [m_plast, m_metal, m_bodyred, m_alu, m_white])
     grille = obj_from_bm_m(grille_bm(), "SK_KAMAZ_Pickup_Grille", [m_plast, m_bodyred, m_white, m_metal])
     add_text(grille, "KAMAZ", 0.024, (0.100, 0.0, 0.0165), (radians(90), 0.0, radians(90)), m_white)
     platform = obj_from_bm_m(platform_bm(), "SK_KAMAZ_Pickup_Platform", [m_metal, m_plast])
@@ -717,10 +808,10 @@ def build_body(out):
     for o in parts:
         print(f"[{o.name}] tris={tris(o)}")
 
-    export_one(bfront, os.path.join(out, "bumper_front_v1.glb"))
-    export_one(bback, os.path.join(out, "bumper_back_v1.glb"))
-    export_one(grille, os.path.join(out, "grille_v1.glb"))
-    export_one(platform, os.path.join(out, "platform_v1.glb"))
+    export_one(bfront, os.path.join(out, "bumper_front_v2.glb"))
+    export_one(bback, os.path.join(out, "bumper_back_v2.glb"))
+    export_one(grille, os.path.join(out, "grille_v2.glb"))
+    export_one(platform, os.path.join(out, "platform_v2.glb"))
 
     cam, tgt = setup_render()
 
@@ -732,19 +823,19 @@ def build_body(out):
     solo(bfront, Vector((0.0, 0.0, 0.15)), {
         "front": (Vector((1.0, 0.0, 0.08)), 2.3),
         "quarter": (Vector((0.85, -0.5, 0.35)), 2.3),
-    }, "bumper_front_v1")
+    }, "bumper_front_v2")
     solo(bback, Vector((-0.02, 0.0, 0.0)), {
         "rear": (Vector((-1.0, 0.0, 0.08)), 2.2),
         "quarter": (Vector((-0.85, -0.5, 0.35)), 2.2),
-    }, "bumper_back_v1")
+    }, "bumper_back_v2")
     solo(grille, Vector((0.07, 0.0, -0.10)), {
         "front": (Vector((1.0, 0.0, 0.1)), 1.0),
         "quarter": (Vector((0.85, -0.45, 0.3)), 1.0),
-    }, "grille_v1")
+    }, "grille_v2")
     solo(platform, Vector((-0.72, 0.0, 0.12)), {
         "quarter": (Vector((0.8, -0.6, 0.55)), 2.3),
         "top": (Vector((0.2, 0.0, 1.0)), 2.3),
-    }, "platform_v1")
+    }, "platform_v2")
     for p in parts:
         p.hide_render = False
 
