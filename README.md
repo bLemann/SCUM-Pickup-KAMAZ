@@ -60,6 +60,13 @@
 
 Инструменты: SCUM Modding Studio 3.6.0 CLI (`scumstudio.exe`), Blender 4.2.9, UE 4.27.2.
 
+**Patch 3 (исследование):** свой меш для машины делается без GUI студии — UE 4.27 headless
+(`UE4Editor-Cmd.exe`: pythonscript-импорт FBX → cook WindowsNoEditor), затем `scumstudio pak pack`
+из staging экспорта с подменой клон-меша cooked-файлом под тем же именем. Пайплайн проверен
+end-to-end: тест-пак `pakchunk901-KAMAZTEST_P.pak` заменяет переднее левое колесо KAMAZ'а целым
+блокаут-пикапом. Подробности и ограничения — `Patches/Patch-3-mesh-pipeline.md`; скрипт импорта —
+`tools/ue_import_kamaz.py`.
+
 ```bat
 set SCUMSTUDIO_AES_KEY=0x0B1F4E543FB798EFC5BD861BB405BE7081CD03698EA9BA06469462A3B113CA81
 
@@ -77,6 +84,7 @@ scumstudio project export KAMAZ.ssproj
 README.md            — этот файл
 KAMAZ.ssproj/        — проект SCUM Modding Studio (manifest, journal, notes)
 kamaz_scum_blockout.py — генератор blockout-меша (Blender), правится в Patch 2
+tools/               — вспомогательные скрипты (UE-импорт для Patch 3)
 Refs/                — референсы (скриншоты желаемого вида)
 Patches/             — заметки по каждому патчу
 Docs/renders/        — превью blockout-меша (Patch 2)
