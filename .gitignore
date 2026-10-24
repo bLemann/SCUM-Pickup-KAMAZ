@@ -10,3 +10,6 @@ Build/
 # Системное
 Thumbs.db
 desktop.ini
+
+# Studio lock
+*.lock
