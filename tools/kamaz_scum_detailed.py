@@ -221,6 +221,22 @@ def cyl_y(bm, r, y0, y1, cx=0.0, cz=0.0, seg=32, mi=0):
     for f in faces:
         f.material_index = mi
 
+def cyl_x(bm, r, x0, x1, cy=0.0, cz=0.0, seg=20, mi=0):
+    a = [bm.verts.new((x0, cy + r * math.cos(i / seg * math.tau), cz + r * math.sin(i / seg * math.tau))) for i in range(seg)]
+    b = [bm.verts.new((x1, cy + r * math.cos(i / seg * math.tau), cz + r * math.sin(i / seg * math.tau))) for i in range(seg)]
+    faces = []
+    for i in range(seg):
+        j = (i + 1) % seg
+        faces.append(bm.faces.new((a[i], a[j], b[j], b[i])))
+    c0 = bm.verts.new((x0, cy, cz))
+    c1 = bm.verts.new((x1, cy, cz))
+    for i in range(seg):
+        j = (i + 1) % seg
+        faces.append(bm.faces.new((c0, a[j], a[i])))
+        faces.append(bm.faces.new((c1, b[i], b[j])))
+    for f in faces:
+        f.material_index = mi
+
 def gusset(bm, x, y, zb, zt, dx, th, mi=0):
     y2 = y + th
     a = bm.verts.new((x, y, zb)); b = bm.verts.new((x + dx, y, zt)); c = bm.verts.new((x, y, zt))
@@ -228,6 +244,26 @@ def gusset(bm, x, y, zb, zt, dx, th, mi=0):
     for f in (bm.faces.new((a, b, c)), bm.faces.new((a2, c2, b2)),
               bm.faces.new((a, b, b2, a2)), bm.faces.new((c, b, b2, c2))):
         f.material_index = mi
+
+def add_text(obj, text, size, loc, rot, mat, extrude=0.003):
+    cu = bpy.data.curves.new(text, type='FONT')
+    cu.body = text
+    cu.size = size
+    cu.extrude = extrude
+    cu.align_x = 'CENTER'
+    cu.align_y = 'CENTER'
+    to = bpy.data.objects.new("TMP_txt", cu)
+    bpy.context.collection.objects.link(to)
+    to.location = loc
+    to.rotation_euler = rot
+    bpy.ops.object.select_all(action='DESELECT')
+    to.select_set(True)
+    bpy.context.view_layer.objects.active = to
+    bpy.ops.object.convert(target='MESH')
+    to.data.materials.append(mat)
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.join()
 
 def led_bar_bm():
     """Замена SM_KAMAZ_Pickup_Light_Top: LED-балка, свет в -X (назад), тёплый тон.
@@ -394,6 +430,104 @@ def battery_bm():
     for x0 in (-0.10, -0.05, 0.0, 0.05):
         box(bm, x0, x0 + 0.03, -0.108, -0.102, 0.03, 0.13, 0)
         box(bm, x0, x0 + 0.03, 0.102, 0.108, 0.03, 0.13, 0)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return bm
+
+def bumper_front_bm():
+    """Замена SK_KAMAZ_Pickup_Bumper_Front: рамка донора
+    X -0.324..0.344 (морда +X), Y +-0.987, Z -0.047..0.445.
+    Силовой бампер: лицевая плита с ледяной DRL-полосой, крылья,
+    металлическая защита, 2 красные проушины, LED-противотуманки."""
+    bm = bmesh.new()
+    box(bm, -0.10, 0.30, -0.95, 0.95, 0.02, 0.28, 0)
+    box(bm, 0.30, 0.34, -0.70, 0.70, 0.10, 0.24, 0)
+    box(bm, 0.30, 0.34, -0.70, 0.70, 0.24, 0.28, 3)
+    box(bm, -0.05, 0.30, -0.987, -0.80, 0.05, 0.30, 0)
+    box(bm, -0.05, 0.30, 0.80, 0.987, 0.05, 0.30, 0)
+    box(bm, 0.16, 0.30, -0.72, 0.72, -0.047, 0.02, 1)
+    box(bm, 0.20, 0.24, -0.50, -0.38, -0.047, 0.02, 1)
+    box(bm, 0.20, 0.24, 0.38, 0.50, -0.047, 0.02, 1)
+    box(bm, 0.26, 0.31, -0.87, -0.73, 0.12, 0.24, 0)
+    box(bm, 0.31, 0.34, -0.845, -0.755, 0.145, 0.215, 4)
+    box(bm, 0.26, 0.31, 0.73, 0.87, 0.12, 0.24, 0)
+    box(bm, 0.31, 0.34, 0.755, 0.845, 0.145, 0.215, 4)
+    for yc in (-0.32, 0.32):
+        box(bm, 0.26, 0.32, yc - 0.05, yc - 0.03, -0.047, 0.05, 2)
+        box(bm, 0.26, 0.32, yc + 0.03, yc + 0.05, -0.047, 0.05, 2)
+        box(bm, 0.26, 0.32, yc - 0.05, yc + 0.05, 0.03, 0.05, 2)
+    box(bm, 0.06, 0.20, -0.28, -0.16, -0.047, -0.005, 0)
+    box(bm, 0.06, 0.20, -0.06, 0.06, -0.047, -0.005, 0)
+    box(bm, 0.06, 0.20, 0.16, 0.28, -0.047, -0.005, 0)
+    box(bm, -0.32, 0.05, -0.55, 0.55, 0.28, 0.33, 0)
+    box(bm, -0.10, 0.10, -0.50, -0.40, 0.28, 0.445, 0)
+    box(bm, -0.10, 0.10, 0.40, 0.50, 0.28, 0.445, 0)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return bm
+
+def bumper_back_bm():
+    """Замена SK_KAMAZ_Pickup_Bumper_Back: рамка донора
+    X -0.198..0.172 (внешняя сторона -X), Y +-0.95, Z -0.121..0.107.
+    Силовой бампер: задняя плита, ступенька, козырёк над номером,
+    2 красные шаклы с пальцами, квэд-эхауст (4 насадки)."""
+    bm = bmesh.new()
+    box(bm, -0.14, 0.172, -0.95, 0.95, -0.10, 0.107, 0)
+    box(bm, -0.198, -0.14, -0.95, 0.95, -0.10, 0.10, 0)
+    box(bm, -0.198, 0.10, -0.9504, -0.86, -0.06, 0.107, 0)
+    box(bm, -0.198, 0.10, 0.86, 0.9504, -0.06, 0.107, 0)
+    box(bm, -0.12, 0.12, -0.35, 0.35, 0.065, 0.107, 1)
+    obbox(bm, [(-0.16, -0.32, 0.02), (-0.16, 0.32, 0.02), (-0.19, 0.32, 0.09), (-0.19, -0.32, 0.09),
+               (-0.19, -0.32, 0.045), (-0.19, 0.32, 0.045), (-0.212, 0.32, 0.107), (-0.212, -0.32, 0.107)], 0)
+    for yc in (-0.55, 0.55):
+        box(bm, -0.23, -0.15, yc - 0.045, yc + 0.045, -0.025, 0.02, 2)
+        box(bm, -0.23, -0.15, yc - 0.045, yc + 0.045, 0.05, 0.095, 2)
+        box(bm, -0.15, -0.13, yc - 0.045, yc + 0.045, -0.025, 0.095, 2)
+        cyl_y(bm, 0.011, yc - 0.06, yc + 0.06, cx=-0.19, cz=0.0725, seg=12, mi=1)
+    for yc in (-0.56, -0.42, 0.42, 0.56):
+        cyl_x(bm, 0.032, -0.23, -0.09, cy=yc, cz=-0.045, seg=20, mi=3)
+        box(bm, -0.11, -0.07, yc - 0.02, yc + 0.02, -0.075, -0.015, 1)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return bm
+
+def grille_bm():
+    """Решётка в рамке Body_Front (морда +X, пивот донора):
+    X до 0.095, Y +-0.40, Z -0.245..-0.02. Чёрная рамка с вертикальными
+    ламелями, красная кузовная плашка сверху, тёмный щиток под надпись."""
+    bm = bmesh.new()
+    box(bm, 0.05, 0.095, -0.40, 0.40, -0.245, -0.22, 0)
+    box(bm, 0.05, 0.095, -0.40, 0.40, -0.045, -0.02, 0)
+    box(bm, 0.05, 0.095, -0.40, -0.375, -0.22, -0.045, 0)
+    box(bm, 0.05, 0.095, 0.375, 0.40, -0.22, -0.045, 0)
+    for i in range(20):
+        ys = -0.364 + i * 0.0375
+        box(bm, 0.065, 0.095, ys, ys + 0.016, -0.215, -0.05, 0)
+    box(bm, 0.05, 0.10, -0.30, 0.30, -0.005, 0.038, 1)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    return bm
+
+def platform_bm():
+    """Платформа в рамке Body_Top: пол с рифлёным (checker) настилом
+    X -1.55..0.10, Y +-0.70, Z 0; обвязка, поперечины, передний щит."""
+    bm = bmesh.new()
+    x0, x1, y0, y1 = -1.55, 0.10, -0.70, 0.70
+    nx, ny = 16, 14
+    dx, dy = (x1 - x0) / nx, (y1 - y0) / ny
+    grid = [[bm.verts.new((x0 + i * dx, y0 + j * dy, 0.0)) for j in range(ny + 1)] for i in range(nx + 1)]
+    cells = []
+    for i in range(nx):
+        for j in range(ny):
+            f = bm.faces.new((grid[i][j], grid[i + 1][j], grid[i + 1][j + 1], grid[i][j + 1]))
+            f.material_index = 0
+            cells.append(f)
+    for k, f in enumerate(cells):
+        if (k % nx + k // nx) % 2 == 0:
+            bmesh.ops.inset_region(bm, faces=[f], thickness=min(dx, dy) * 0.33, depth=0.006, use_even_offset=True)
+    box(bm, -1.60, 0.15, -0.75, -0.70, -0.02, 0.04, 0)
+    box(bm, -1.60, 0.15, 0.70, 0.75, -0.02, 0.04, 0)
+    box(bm, -1.60, -1.50, -0.75, 0.75, -0.02, 0.05, 0)
+    box(bm, 0.05, 0.15, -0.75, 0.75, -0.02, 0.30, 1)
+    box(bm, 0.03, 0.17, -0.75, 0.75, 0.30, 0.34, 0)
+    for xc in (-1.35, -0.85, -0.35, 0.0):
+        box(bm, xc - 0.025, xc + 0.025, -0.70, 0.70, -0.08, -0.02, 0)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     return bm
 
@@ -565,6 +699,55 @@ def build_parts(out):
     for p in parts:
         p.hide_render = False
 
+def build_body(out):
+    m_plast = mat("KAMAZ_PlasticBlack", (0.028, 0.028, 0.032), 0.62)
+    m_metal = mat("KAMAZ_MetalDark", (0.075, 0.078, 0.085), 0.42, metal=0.85)
+    m_bodyred = mat("KAMAZ_BodyRed", (0.784, 0.122, 0.180), 0.35)
+    m_white = mat("KAMAZ_LensWhite", (0.95, 0.96, 1.00), 0.20)
+    m_warm = mat("KAMAZ_LensWarm", (1.00, 0.72, 0.40), 0.25)
+    m_alu = mat("KAMAZ_AlternAlu", (0.38, 0.39, 0.41), 0.38, metal=0.9)
+
+    bfront = obj_from_bm_m(bumper_front_bm(), "SK_KAMAZ_Pickup_Bumper_Front", [m_plast, m_metal, m_bodyred, m_white, m_warm])
+    bback = obj_from_bm_m(bumper_back_bm(), "SK_KAMAZ_Pickup_Bumper_Back", [m_plast, m_metal, m_bodyred, m_alu])
+    grille = obj_from_bm_m(grille_bm(), "SK_KAMAZ_Pickup_Grille", [m_plast, m_bodyred, m_white, m_metal])
+    add_text(grille, "KAMAZ", 0.024, (0.100, 0.0, 0.0165), (radians(90), 0.0, radians(90)), m_white)
+    platform = obj_from_bm_m(platform_bm(), "SK_KAMAZ_Pickup_Platform", [m_metal, m_plast])
+
+    parts = (bfront, bback, grille, platform)
+    for o in parts:
+        print(f"[{o.name}] tris={tris(o)}")
+
+    export_one(bfront, os.path.join(out, "bumper_front_v1.glb"))
+    export_one(bback, os.path.join(out, "bumper_back_v1.glb"))
+    export_one(grille, os.path.join(out, "grille_v1.glb"))
+    export_one(platform, os.path.join(out, "platform_v1.glb"))
+
+    cam, tgt = setup_render()
+
+    def solo(obj, center, views, prefix):
+        for p in parts:
+            p.hide_render = p is not obj
+        render_views(cam, tgt, center, views, out, prefix)
+
+    solo(bfront, Vector((0.0, 0.0, 0.15)), {
+        "front": (Vector((1.0, 0.0, 0.08)), 2.3),
+        "quarter": (Vector((0.85, -0.5, 0.35)), 2.3),
+    }, "bumper_front_v1")
+    solo(bback, Vector((-0.02, 0.0, 0.0)), {
+        "rear": (Vector((-1.0, 0.0, 0.08)), 2.2),
+        "quarter": (Vector((-0.85, -0.5, 0.35)), 2.2),
+    }, "bumper_back_v1")
+    solo(grille, Vector((0.07, 0.0, -0.10)), {
+        "front": (Vector((1.0, 0.0, 0.1)), 1.0),
+        "quarter": (Vector((0.85, -0.45, 0.3)), 1.0),
+    }, "grille_v1")
+    solo(platform, Vector((-0.72, 0.0, 0.12)), {
+        "quarter": (Vector((0.8, -0.6, 0.55)), 2.3),
+        "top": (Vector((0.2, 0.0, 1.0)), 2.3),
+    }, "platform_v1")
+    for p in parts:
+        p.hide_render = False
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     out = argv[0] if argv else r"C:\Users\leman\AppData\Local\Temp\rufp\kamaz\model"
@@ -579,6 +762,8 @@ def main():
         build_lights(out)
     if stage in ("parts", "all"):
         build_parts(out)
+    if stage in ("body", "all"):
+        build_body(out)
     print("DONE")
 
 main()
