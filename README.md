@@ -24,9 +24,13 @@
   - `item clone`: Rager → `BPC_KAMAZ_Pickup` (122→136 пакетов) + Laika → `BPC_KAMAZ_Pickup_Laika`.
   - Команды спавна: `#SpawnVehicle BPC_KAMAZ_Pickup`, `#SpawnVehicle BPC_KAMAZ_Pickup_Laika`.
   - Тестовый PAK собран и провалидирован (277 пакетов, 0 проблем), выложен в Release.
-- **Patch 2 — Blockout-меш**
+- **Patch 2 — Blockout-меш** — 🔶 в работе
   - Blender → glTF → UE 4.27 → pak. Правка багов `kamaz_scum_blockout.py`
     (wheel_z 0.78→0.61, EEVEE-фолбэк, кватернион камеры, разворот надписи, парящие стёкла, UV/LOD/коллизии/сокеты).
+  - Готово: блокаут сгенерирован и отрендерен — LOD0 (2560 verts / 3984 tris) + LOD1 0.5 + LOD2 0.25,
+    3 UCX-бокса коллизий, smart UV 66°; экспорт FBX + glTF + UV-развёртка;
+    превью (UCX/LOD скрыты из рендера): [Docs/renders/](Docs/renders) — front 3/4, side, rear 3/4.
+  - Далее: подмена меша донора на свой (путь импорта в PAK — pkg/modshare/UE 4.27, исследуется).
 - **Patch 3 — Скелет под запчасти**
   - Сокеты/кости под аттачменты запчастей: Engine, Battery, Alternator, 4×Wheel, Doors, Body, Bumpers, Dashboard.
 - **Patch 4 — Материалы и ливреи**
@@ -70,6 +74,7 @@ KAMAZ.ssproj/        — проект SCUM Modding Studio (manifest, journal, no
 kamaz_scum_blockout.py — генератор blockout-меша (Blender), правится в Patch 2
 Refs/                — референсы (скриншоты желаемого вида)
 Patches/             — заметки по каждому патчу
+Docs/renders/        — превью blockout-меша (Patch 2)
 Build/               — собранные PAK (не в git, см. .gitignore)
 ```
 

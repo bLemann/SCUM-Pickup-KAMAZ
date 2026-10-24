@@ -91,11 +91,11 @@ cube('Front fascia', (0, -2.06, 1.40), (1.72, 0.16, 0.58), BLACK, 0.05)
 
 # Double cab: cabin body, windshield and rear glass
 cube('Cab shell', (0, -0.42, 2.02), (1.78, 1.82, 1.18), RED, 0.11)
-cube('Windshield dark glass', (0, -1.355, 2.22), (1.52, 0.035, 0.66), GLASS, 0.025)
-cube('Rear cab window', (0, 0.505, 2.22), (1.43, 0.035, 0.62), GLASS, 0.02)
+cube('Windshield dark glass', (0, -1.33, 2.22), (1.52, 0.035, 0.66), GLASS, 0.025)
+cube('Rear cab window', (0, 0.49, 2.22), (1.43, 0.035, 0.62), GLASS, 0.02)
 # Side windows on both sides, front and rear door windows
 for side in (-1, 1):
-    x = side * 0.905
+    x = side * 0.89
     cube(f'Front side window {side}', (x, -0.77, 2.24), (0.035, 0.72, 0.56), GLASS, 0.025)
     cube(f'Rear side window {side}', (x, -0.02, 2.24), (0.035, 0.57, 0.56), GLASS, 0.025)
     # door seam accents and handles
@@ -114,7 +114,7 @@ for side in (-1,1):
     cube(f'Bed top rail {side}', (side*0.82, 1.40, 1.86), (0.15, 1.62, 0.08), BLACK, 0.025)
 # Tailgate rear face
 cube('Tailgate', (0, 2.20, 1.57), (1.55, 0.12, 0.50), RED, 0.06)
-text_obj('Tailgate KAMAZ lettering', 'KAMAZ', (0, 2.267, 1.61), 0.24, BLACK, rot=(math.pi/2,0,0), extrude=0.001)
+text_obj('Tailgate KAMAZ lettering', 'KAMAZ', (0, 2.267, 1.61), 0.24, BLACK, rot=(math.pi/2, 0, math.pi), extrude=0.001)
 
 # Grille and brand lettering on front (front face is -Y)
 cube('Main grille recess', (0, -2.155, 1.43), (1.18, 0.045, 0.42), DARK, 0.025)
@@ -143,7 +143,7 @@ for y, label in ((-2.43,'Front'), (2.45,'Rear')):
 
 # Wheels: four chunky tires, rims, red rings and simplified tread blocks
 wheel_y = (-1.35, 1.42)
-wheel_z = 0.78
+wheel_z = 0.61
 for axle, y in enumerate(wheel_y):
     for side in (-1,1):
         x = side*1.02
@@ -199,7 +199,9 @@ for obj in list(bpy.context.scene.objects):
 # Set scene units and a useful viewport angle
 scene = bpy.context.scene
 scene.unit_settings.system = 'METRIC'
-scene.render.engine = 'BLENDER_EEVEE_NEXT' if hasattr(scene, 'eevee') else 'BLENDER_EEVEE'
+_valid_engines = {item.identifier for item in scene.render.bl_rna.properties['engine'].enum_items}
+scene.render.engine = ('BLENDER_EEVEE_NEXT' if 'BLENDER_EEVEE_NEXT' in _valid_engines
+                       else 'BLENDER_EEVEE' if 'BLENDER_EEVEE' in _valid_engines else 'CYCLES')
 scene.render.resolution_x = 1280
 scene.render.resolution_y = 720
 scene.render.resolution_percentage = 100
@@ -207,12 +209,147 @@ for area in bpy.context.screen.areas:
     if area.type == 'VIEW_3D':
         area.spaces.active.region_3d.view_distance = 8.5
         area.spaces.active.region_3d.view_location = (0, 0, 1.1)
-        area.spaces.active.region_3d.view_rotation = (math.radians(65), 0, math.radians(-25))
+        area.spaces.active.region_3d.view_rotation = Euler(
+            (math.radians(65), 0.0, math.radians(-25)), 'XYZ').to_quaternion()
 
 # Select body root-ish object and leave a clear scene state
 bpy.ops.object.select_all(action='DESELECT')
 obj = bpy.data.objects.get('Lower body shell')
 if obj:
     obj.select_set(True); bpy.context.view_layer.objects.active = obj
+
+# ---------------------------------------------------------------------------
+# Game export (works headless too):
+#   blender --background --python kamaz_scum_blockout.py -- <out_dir>
+# Produces KAMAZ_Pickup_Blockout.fbx (LOD0+LOD1+LOD2+UCX), .glb and previews.
+# ---------------------------------------------------------------------------
+import os, sys
+
+def cli_out_dir():
+    argv = sys.argv
+    if '--' in argv:
+        rest = argv[argv.index('--') + 1:]
+        if rest:
+            return rest[0]
+    return None
+
+def add_uv_smart(obj, margin=0.02):
+    if obj.type != 'MESH' or obj.data.uv_layers:
+        return
+    obj.data.uv_layers.new(name='UVMap')
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=margin)
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+out_dir = cli_out_dir()
+if out_dir:
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Text lettering must become real geometry to survive export
+    for ob in [o for o in bpy.context.scene.objects if o.type == 'FONT']:
+        bpy.context.view_layer.objects.active = ob
+        ob.select_set(True)
+        bpy.ops.object.convert(target='MESH')
+
+    # UV unwrap every vehicle part (studio floor is excluded everywhere below)
+    bpy.ops.object.select_all(action='DESELECT')
+    for ob in bpy.context.scene.objects:
+        if ob.type == 'MESH' and ob.name != 'Ground':
+            add_uv_smart(ob)
+
+    # Simple convex collision hulls (UE UCX_ prefix), positioned from known dims
+    ucx = [
+        cube('UCX_KAMAZ_Pickup_Blockout_01', (0, 0.0, 1.18), (1.90, 4.35, 0.70), None, 0),
+        cube('UCX_KAMAZ_Pickup_Blockout_02', (0, -0.42, 2.02), (1.85, 1.90, 1.25), None, 0),
+        cube('UCX_KAMAZ_Pickup_Blockout_03', (0, 1.40, 1.60), (1.70, 1.65, 0.55), None, 0),
+    ]
+    for u in ucx:
+        u.hide_render = True
+
+    # Join everything (minus floor) into the LOD0 game mesh
+    bpy.ops.object.select_all(action='DESELECT')
+    parts = [o for o in bpy.context.scene.objects if o.type == 'MESH' and o.name != 'Ground' and not o.name.startswith('UCX_')]
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    game = bpy.context.object
+    game.name = 'KAMAZ_Pickup_Blockout'
+
+    # LODs as decimated copies; UE FBX import picks them up via _LOD<n> suffix
+    for i, ratio in enumerate((0.5, 0.25), start=1):
+        dup = game.copy()
+        dup.data = game.data.copy()
+        bpy.context.collection.objects.link(dup)
+        dup.name = 'KAMAZ_Pickup_Blockout_LOD%d' % i
+        bpy.context.view_layer.objects.active = dup
+        bpy.ops.object.select_all(action='DESELECT')
+        dup.select_set(True)
+        dec = dup.modifiers.new('Decimate', 'DECIMATE')
+        dec.ratio = ratio
+        bpy.ops.object.modifier_apply(modifier=dec.name)
+        dup.hide_render = True
+
+    # FBX with LOD0 + LODs + UCX collision
+    bpy.ops.object.select_all(action='DESELECT')
+    for name in ('KAMAZ_Pickup_Blockout', 'KAMAZ_Pickup_Blockout_LOD1', 'KAMAZ_Pickup_Blockout_LOD2') :
+        o = bpy.data.objects.get(name)
+        if o:
+            o.select_set(True)
+    bpy.ops.export_scene.fbx(
+        filepath=os.path.join(out_dir, 'KAMAZ_Pickup_Blockout.fbx'),
+        use_selection=True, mesh_smooth_type='FACE', add_leaf_bones=False,
+        bake_space_transform=True, path_mode='COPY')
+
+    # glTF preview mesh
+    bpy.ops.object.select_all(action='DESELECT')
+    game.select_set(True)
+    bpy.ops.export_scene.gltf(filepath=os.path.join(out_dir, 'KAMAZ_Pickup_Blockout.glb'), use_selection=True)
+
+    # Preview renders: camera + sun, three angles
+    cam_data = bpy.data.cameras.new('PreviewCam')
+    cam_data.lens = 40
+    cam = bpy.data.objects.new('PreviewCam', cam_data)
+    bpy.context.collection.objects.link(cam)
+    scene.camera = cam
+    sun_data = bpy.data.lights.new('PreviewSun', 'SUN')
+    sun_data.energy = 2.0
+    sun = bpy.data.objects.new('PreviewSun', sun_data)
+    bpy.context.collection.objects.link(sun)
+    sun.rotation_euler = (math.radians(50), 0, math.radians(30))
+    if scene.world is None:
+        scene.world = bpy.data.worlds.new('World')
+    scene.world.use_nodes = True
+    scene.world.node_tree.nodes['Background'].inputs[0].default_value = (0.35, 0.35, 0.40, 1.0)
+
+    shots = {
+        'preview_front34.png': (6.4, -5.6, 1.8),
+        'preview_side.png': (8.6, 0.0, 1.6),
+        'preview_rear34.png': (-6.2, 6.6, 2.5),
+    }
+    for fname, loc in shots.items():
+        cam.location = loc
+        # aim at truck center
+        direction = Vector((0, 0, 1.1)) - Vector(loc)
+        cam.rotation_euler = direction.to_track_quat('-Z', 'Y').to_euler()
+        scene.render.filepath = os.path.join(out_dir, fname)
+        try:
+            bpy.ops.render.render(write_still=True)
+        except RuntimeError:
+            scene.render.engine = 'CYCLES'
+            scene.cycles.samples = 32
+            scene.cycles.device = 'CPU'
+            bpy.ops.render.render(write_still=True)
+
+    tris = sum(len(p.vertices) - 2 for p in game.data.polygons)
+    stats = ('mesh: %s\nverts: %d\ntris(LOD0): %d\nLOD1 ratio: 0.5\nLOD2 ratio: 0.25\n'
+             'collision: 3x UCX box\nUV: smart_project 66deg\n' % (game.name, len(game.data.vertices), tris))
+    with open(os.path.join(out_dir, 'stats.txt'), 'w') as f:
+        f.write(stats)
+    print(stats)
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out_dir, 'kamaz_blockout.blend'))
 
 print('KAMAZ SCUM pickup blockout created. Save as .blend and refine proportions/materials before game export.')
