@@ -3,7 +3,7 @@
 # Blender 3.6+ / 4.x. Run via Scripting > Run Script.
 # Units: meters. Front of vehicle is -Y, rear is +Y, Z is up.
 import bpy, math
-from mathutils import Vector
+from mathutils import Vector, Euler
 
 # Clear scene
 bpy.ops.object.select_all(action='SELECT')
