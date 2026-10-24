@@ -13,3 +13,6 @@ desktop.ini
 
 # Studio lock
 *.lock
+
+# Python
+__pycache__/

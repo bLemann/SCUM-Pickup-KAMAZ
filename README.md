@@ -36,7 +36,7 @@
     спорт-бар за кабиной, LED-оптика с голубыми ХОГ, красные буксировочные проушины.
     Кузов — светло-серый под камуфляж (окраска/ливрея — Patch 4).
   - Далее: подмена меша донора на свой (путь импорта в PAK — pkg/modshare/UE 4.27, исследуется).
-- **Patch 2b — Совместимость с MIDWAY: слияние BP_VehicleManager** — 🔶 в работе
+- **Patch 2b — Совместимость с MIDWAY: слияние BP_VehicleManager + AssetRegistry** — 🔶 в работе (ждёт игрового теста)
   - Конфликт: наш PAK и MIDWAY оба правят `BP_VehicleManager` — при двух паках в игре
     выживает только один менеджер, транспорт второго мода не спавнится. Решение: единый
     менеджер — в наш добавлены 6 машин MIDWAY (allowlist: только те, у кого есть
@@ -50,6 +50,24 @@
     premap — d2-хвост; `AssetRegistry.bin` из пака убран (дубль 555 записей — краш на буте).
   - Приоритет монтирования `~mods` — обратный алфавитный: `0_KAMAZ_...` монтируется
     последним и перекрывает менеджер MIDWAY.
+  - **Второй конфликт — AssetRegistry.bin, семантика last-wins.** Менеджер слили, но спавн
+    MW всё равно «not allowed»: игра читает **один** `AssetRegistry.bin` — из последнего
+    смонтированного пака, целиком (подтверждено тестом: с нашим AR спавнится KAMAZ,
+    `zzMIDWAY_BPC_MIDWAY_Kamaz` — «not allowed», а MW-сущности из сохранения не
+    восстанавливаются — `failed to find setup 'zzMIDWAY_MWTruck_ES'`). Наш AR не знал
+    MW-имена, их AR — наших. Решение: **слитый AR**.
+  - Формат SCUM `AssetRegistry.bin` реверсирован (UE 4.27, версия FixedTags 8):
+    FGuid-магия + версия + хеш-имя-батч (u64-хеши = `CityHash64(lowercase(name))`,
+    имена через u16-заголовки) + `FStore` (магия `0x12345679`, 11 счётчиков, дедуп-таблицы
+    значений: строки/имена/export-пути/пары) + записи `FAssetData` (5 FName + хендл
+    tag-карты + бандлы + chunk IDs + флаги) + секция зависимостей + `FAssetPackageData`.
+  - `tools/asset_registry_merge.py`: парсит оба AR, идентифицирует MW-уникальные ассеты
+    по паре (package, asset), аппендит их к нашему AR с ремапом индексов имён и
+    tag-паров (+8 734 имени, +3 194 MW-ассета, +1 574 MW-pkgdata; наши секции —
+    байт-в-байт как в исходнике). Контроль: `tools/asset_registry_walk.py` (полный
+    проход до EOF) и `scumstudio assetreg verify` — **round trip OK, hash mismatches 0**.
+  - Итоговый пак: 557 записей, 63,17 МБ, монтируется последним — в реестре есть и
+    KAMAZ, и вся MW-техника. Осталось: игровой тест трёх команд + рестарт-персистентность.
 - **Patch 3 — Скелет под запчасти**
   - Сокеты/кости под аттачменты запчастей: Engine, Battery, Alternator, 4×Wheel, Doors, Body, Bumpers, Dashboard.
 - **Patch 4 — Материалы и ливреи**
@@ -99,7 +117,7 @@ scumstudio project export KAMAZ.ssproj
 README.md            — этот файл
 KAMAZ.ssproj/        — проект SCUM Modding Studio (manifest, journal, notes)
 kamaz_scum_blockout.py — генератор blockout-меша (Blender), правится в Patch 2
-tools/               — вспомогательные скрипты (UE-импорт для Patch 3)
+tools/               — вспомогательные скрипты (менеджер, слияние AssetRegistry, UE-импорт)
 Refs/                — референсы (скриншоты желаемого вида)
 Patches/             — заметки по каждому патчу
 Docs/renders/        — превью blockout-меша (Patch 2)
