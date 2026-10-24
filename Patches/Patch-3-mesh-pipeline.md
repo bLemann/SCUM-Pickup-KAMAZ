@@ -38,15 +38,23 @@
 4. **Проверка**: `scumstudio render mesh <pak> /Game/.../SM_KAMAZ_Pickup_Wheel_FrontLeft` — рендерит
    содержимое пака тем же загрузчиком, что у игры.
 
-## Тест-пак 901
+## Тест-пак (итог: ОДИН пак)
 
-- `pakchunk901-KAMAZTEST_P.pak` = копия 900 (клон машины) + заменённый
+- Первая попытка — два пака (900 студийный + 901 с заменённым колесом) — краш игры на буте:
+  «Node /Game/.../UI_CraftingPanelSwitcher ... has zero prerequisites, but has not been queued»
+  (FAsyncLoadingThread). Все 555 записей и одинаковый `AssetRegistry.bin` оказались в обоих паках —
+  дубль графа загрузки/реестра при монтировании. **Правило: мод = один пак**, подмену делать сразу
+  в staging перед `pak pack`, второй пак-оверлей не собирать.
+- Рабочий вариант: `pakchunk900-KAMAZ_P.pak` = staging экспорта + заменённый
   `SM_KAMAZ_Pickup_Wheel_FrontLeft` = целый блокаут-пикап вместо переднего левого колеса.
+  Студийный оригинал сохранён: `D:\SteamLibrary\KAMAZ_UE\900_studio_original.pak`.
 - Дефолтный спавн-пресет (`KAMAZ_PickupManualSpawnPreset`) включает: Body F/L/R/T, Brakelights,
   BrakeLight_Top, Bumpers, Chassis, Dashboard, все двери, DoorHood, DoorTrunk, Engine, Alternator,
   Battery, Gearbox, Headlights, Radio, 3 сиденья, **все 4 колеса**. RoofRack в базовом пресете нет.
 - Колесо выбрано целью потому, что это StaticMesh-часть (класс совпадает, скелет не нужен) и оно
   есть в любом пресете (вплоть до WheelsOnly).
+- Формат cooked-пакетов UE-кука и студийных клонов идентичен по заголовку (ver 522,
+  unversioned=False, cooked=False в трактовке ридера студии, engine-поля нулевые) — игра ест оба.
 
 ## Известные ограничения (следующие шаги)
 
