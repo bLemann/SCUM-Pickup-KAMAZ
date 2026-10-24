@@ -1,0 +1,14 @@
+{
+  "format": "scumstudio.project/1",
+  "name": "KAMAZ",
+  "gameBuild": "25804202",
+  "created": "2026-10-24T04:09:10.2809953+00:00",
+  "modified": "2026-10-24T04:09:10.2809953+00:00",
+  "sources": [
+    {
+      "path": "D:\\SteamLibrary\\steamapps\\common\\SCUM\\SCUM\\Content\\Paks",
+      "kind": "paks",
+      "role": "client"
+    }
+  ]
+}

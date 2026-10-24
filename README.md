@@ -14,10 +14,10 @@ Laika выбрана потому, что её посадочные анимац
   - Сравнение доноров: Laika (44 запчасти, 4 сиденья) vs Rager (57, 6 сидений — 2 в багажнике) vs WolfsWagen (49, 4).
   - Выбран донор: **Laika**.
   - Найден обгорелый декор `SM_Pickup_01_*_Damage` (старый пикап SCUM) — только как референс геометрии.
-- **Patch 1 — Клон донора и спавн** — в работе
-  - `item clone` Laika → `KAMAZ_Pickup` в проекте `.ssproj`.
-  - Переименование/смещение запчастей, своя админ-команда спавна.
-  - Тестовый PAK (`pakchunkNNN-KAMAZ_P.pak`).
+- **Patch 1 — Клон донора и спавн** — ✅ готово ([Release v0.1.0-patch1](https://github.com/bLemann/SCUM-Pickup-KAMAZ/releases/tag/v0.1.0-patch1))
+  - `item clone` Laika → `BPC_KAMAZ_Pickup`: 122 пакета (все запчасти, меши, материалы, кривые, 4 пресета спавна).
+  - Команда спавна: `#SpawnVehicle BPC_KAMAZ_Pickup`.
+  - Тестовый PAK собран и провалидирован (123 пакета, 0 проблем), выложен в Release.
 - **Patch 2 — Blockout-меш**
   - Blender → glTF → UE 4.27 → pak. Правка багов `kamaz_scum_blockout.py`
     (wheel_z 0.78→0.61, EEVEE-фолбэк, кватернион камеры, разворот надписи, парящие стёкла, UV/LOD/коллизии/сокеты).
@@ -28,7 +28,9 @@ Laika выбрана потому, что её посадочные анимац
 
 ## Установка (клиент, одиночка/свой сервер)
 
-1. Скопировать `pakchunkNNN-KAMAZ_P.pak` в `SCUM\SCUM\Content\Paks\`.
+Готовый PAK — в [Releases](https://github.com/bLemann/SCUM-Pickup-KAMAZ/releases).
+
+1. Скопировать `pakchunk900-KAMAZ_P.pak` и `pakchunk900-KAMAZ_P.sig` в `SCUM\SCUM\Content\Paks\~mods\`.
 2. Запуск с параметрами: `-fileopenlog` и отключённым BattlEye (для одиночки).
 3. Заспавнить транспорт командой (см. ниже).
 
@@ -36,7 +38,7 @@ Laika выбрана потому, что её посадочные анимац
 
 | Команда | Что делает | Статус |
 |---|---|---|
-| `#SpawnItem KAMAZ_Pickup` | спавн пикапа | уточняется в Patch 1 |
+| `#SpawnVehicle BPC_KAMAZ_Pickup` | спавн пикапа (4 пресета комплектации) | проверить в игре |
 
 ## Разработка
 
@@ -57,6 +59,7 @@ scumstudio project export KAMAZ.ssproj
 
 ```
 README.md            — этот файл
+KAMAZ.ssproj/        — проект SCUM Modding Studio (manifest, journal, notes)
 kamaz_scum_blockout.py — генератор blockout-меша (Blender), правится в Patch 2
 Refs/                — референсы (скриншоты желаемого вида)
 Patches/             — заметки по каждому патчу
