@@ -27,9 +27,14 @@
 - **Patch 2 — Blockout-меш** — 🔶 в работе
   - Blender → glTF → UE 4.27 → pak. Правка багов `kamaz_scum_blockout.py`
     (wheel_z 0.78→0.61, EEVEE-фолбэк, кватернион камеры, разворот надписи, парящие стёкла, UV/LOD/коллизии/сокеты).
-  - Готово: блокаут сгенерирован и отрендерен — LOD0 (2560 verts / 3984 tris) + LOD1 0.5 + LOD2 0.25,
+  - Готово: блокаут сгенерирован и отрендерен — LOD0 (2456 verts / 3816 tris) + LOD1 0.5 + LOD2 0.25,
     3 UCX-бокса коллизий, smart UV 66°; экспорт FBX + glTF + UV-развёртка;
     превью (UCX/LOD скрыты из рендера): [Docs/renders/](Docs/renders) — front 3/4, side, rear 3/4.
+  - Пропорции приведены к референсу Rager ([Refs/Rager_reference.png](Refs/Rager_reference.png)):
+    двойная кабина на 4 двери, длинный кузов с чёрной крышкой (tonneau), лифтованная посадка,
+    большие грязевые колёса, чёрный обвес (арки, пороги, бампер с защитой), рейлинги с антенной,
+    спорт-бар за кабиной, LED-оптика с голубыми ХОГ, красные буксировочные проушины.
+    Кузов — светло-серый под камуфляж (окраска/ливрея — Patch 4).
   - Далее: подмена меша донора на свой (путь импорта в PAK — pkg/modshare/UE 4.27, исследуется).
 - **Patch 3 — Скелет под запчасти**
   - Сокеты/кости под аттачменты запчастей: Engine, Battery, Alternator, 4×Wheel, Doors, Body, Bumpers, Dashboard.
@@ -40,7 +45,7 @@
 
 Готовый PAK — в [Releases](https://github.com/bLemann/SCUM-Pickup-KAMAZ/releases).
 
-1. Скопировать `pakchunk900-KAMAZ_P.pak` и `pakchunk900-KAMAZ_P.sig` в `SCUM\SCUM\Content\Paks\~mods\`.
+1. Скопировать `pakchunk900-KAMAZ_P.pak` в `SCUM\SCUM\Content\Paks\~mods\`. **Файл `.sig` не нужен — удалите его, если ставили:** `project export` подкладывает рядом с паком копию чужой стоковой сигнатуры (`pakchunk44`), с ней игра показывает «Serialization Error: Corrupt data found» и не запускается.
 2. Запуск с параметрами: `-fileopenlog` и отключённым BattlEye (для одиночки).
 3. Заспавнить транспорт командой (см. ниже).
 
