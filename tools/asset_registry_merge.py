@@ -252,25 +252,29 @@ for raw in ours['nep']:
     out.extend(raw)
 for c, o_, p in ours['ep']:
     wfn(c); wfn(o_); wfn(p)
+# combined store tables: theirs must be INTERLEAVED into single contiguous
+# arrays (ansi_off, wide_off, blobs, npairs), not appended as a second block;
+# their string offsets shift by our blob sizes
+ansi_shift = len(ours['ansi_bytes'])
+wide_shift = len(ours['wide_bytes'])
 for v in ours['ansi_off']:
     wf('<I', v)
+for v in their['ansi_off']:
+    wf('<I', v + ansi_shift)
 for v in ours['wide_off']:
     wf('<I', v)
+for v in their['wide_off']:
+    wf('<I', v + wide_shift)
 out.extend(ours['ansi_bytes'])
+out.extend(their['ansi_bytes'])
 out.extend(ours['wide_bytes'])
+out.extend(their['wide_bytes'])
 for k, v in ours['npairs']:
     wf('<II', k, v)
-for f, v in ours['pairs']:
-    wfn(f); wf('<I', v)
-# appended: their store tables (names/nep/ep/texts empty in theirs)
-for v in their['ansi_off']:
-    wf('<I', v)
-for v in their['wide_off']:
-    wf('<I', v)
-out.extend(their['ansi_bytes'])
-out.extend(their['wide_bytes'])
 for k, v in their['npairs']:
     wf('<II', intern_name(k), remap_val(v))
+for f, v in ours['pairs']:
+    wfn(f); wf('<I', v)
 for f, v in their['pairs']:
     wfn(remap_fn(f)); wf('<I', remap_val(v))
 wf('<I', 0x87654321)
